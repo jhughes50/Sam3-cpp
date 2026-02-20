@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python3:*)",
+      "Bash(dpkg -l:*)",
+      "Bash(sudo apt-get install:*)",
+      "Bash(sudo apt-get:*)",
+      "Bash(cmake:*)"
+    ]
+  }
+}
