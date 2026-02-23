@@ -136,6 +136,13 @@ struct Sam3Output
     at::Tensor presence_logits;  // (1, 1) scene presence logit
 };
 
+/// Pre-processed text for one class / prompt.
+struct Sam3TextInputs
+{
+    at::Tensor input_ids;       ///< (1, T) int64
+    at::Tensor attention_mask;  ///< (1, T) int64
+};
+
 /// Convenience class that owns all four sub-models and orchestrates inference.
 class Sam3
 {
@@ -155,6 +162,11 @@ public:
 
     /// Run full forward pass (image + text must have been set first).
     Sam3Output inference();
+
+    /// Encode text and decode masks for each class, reusing the cached image
+    /// features.  setImage() must be called before this.
+    /// Returns one Sam3Output per entry in text_inputs.
+    std::vector<Sam3Output> inferenceMultiClass(const std::vector<Sam3TextInputs>& text_inputs);
 
     /// Single-call convenience: encode image + text and decode masks.
     Sam3Output operator()(const at::Tensor& pixel_values,

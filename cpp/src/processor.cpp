@@ -132,6 +132,35 @@ at::Tensor Sam3Processor::processText(const std::string& text, at::Tensor& atten
 }
 
 // ---------------------------------------------------------------------------
+
+Sam3ModelInputs Sam3Processor::processImageOnly(const cv::Mat& image) const
+{
+    if (image.empty())
+        throw std::runtime_error("Sam3Processor::processImageOnly: empty image.");
+
+    Sam3ModelInputs inp;
+    inp.pixel_values = processImage(image);
+    inp.orig_height  = image.rows;
+    inp.orig_width   = image.cols;
+    return inp;
+}
+
+// ---------------------------------------------------------------------------
+
+std::vector<Sam3TextInputs> Sam3Processor::processTexts(const std::vector<std::string>& texts) const
+{
+    std::vector<Sam3TextInputs> result;
+    result.reserve(texts.size());
+    for (const auto& text : texts)
+    {
+        at::Tensor attention_mask;
+        at::Tensor input_ids = processText(text, attention_mask);
+        result.push_back(Sam3TextInputs{input_ids, attention_mask});
+    }
+    return result;
+}
+
+// ---------------------------------------------------------------------------
 // Post-processing
 // ---------------------------------------------------------------------------
 

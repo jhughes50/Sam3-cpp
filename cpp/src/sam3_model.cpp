@@ -72,9 +72,7 @@ torch::ScalarType Sam3ModelBase::getDType() const
 
 std::vector<at::Tensor> Sam3ImageEncoder::forward(const at::Tensor& pixel_values)
 {
-
     torch::NoGradGuard no_grad;
-    std::cout << "Raw input type: " << pixel_values.scalar_type() << std::endl;
     std::vector<torch::jit::IValue> inputs{ toDevice(pixel_values) };
     auto output = module_.forward(inputs);
 
@@ -92,11 +90,9 @@ std::vector<at::Tensor> Sam3ImageEncoder::forward(const at::Tensor& pixel_values
 
 at::Tensor Sam3TextEncoder::forward(const at::Tensor& input_ids, const at::Tensor& attention_mask)
 {
-    std::cout << "Text Inputs Types " << input_ids.scalar_type() << "   " << attention_mask.scalar_type() << std::endl;
     torch::NoGradGuard no_grad;
     at::Tensor ninput_ids = toDevice(input_ids);
     at::Tensor nattention_mask = toDevice(attention_mask);
-    std::cout << "Text Inputs Types " << ninput_ids.scalar_type() << "   " << nattention_mask.scalar_type() << std::endl;
     std::vector<torch::jit::IValue> inputs{
         ninput_ids,       // int64 – stays int, moved to device
         nattention_mask   // int64 – stays int, moved to device
@@ -200,6 +196,36 @@ Sam3Output Sam3::inference()
                               original_sizes);
 
     return Sam3Output{ pred_masks, pred_logits, presence_logits };
+}
+
+std::vector<Sam3Output> Sam3::inferenceMultiClass(const std::vector<Sam3TextInputs>& text_inputs)
+{
+    torch::NoGradGuard no_grad;
+    if (!image_cached_)
+        throw std::runtime_error("Sam3::inferenceMultiClass: call setImage() first.");
+
+    at::Tensor original_sizes = torch::tensor(
+        {{static_cast<int64_t>(orig_h_), static_cast<int64_t>(orig_w_)}},
+        torch::kInt64);
+
+    std::vector<Sam3Output> results;
+    results.reserve(text_inputs.size());
+
+    for (const auto& ti : text_inputs)
+    {
+        // setText caches the text embeds and moves the mask to device.
+        text_encoder_.setText(ti.input_ids, ti.attention_mask);
+
+        auto [pred_masks, pred_logits, presence_logits] =
+            mask_decoder_.forward(vision_features_,
+                                  text_encoder_.getTextEmbeds(),
+                                  text_encoder_.getAttentionMask(),
+                                  original_sizes);
+
+        results.push_back(Sam3Output{pred_masks, pred_logits, presence_logits});
+    }
+
+    return results;
 }
 
 Sam3Output Sam3::operator()(const at::Tensor& pixel_values,

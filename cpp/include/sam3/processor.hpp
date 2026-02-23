@@ -15,6 +15,7 @@
 
 #include "sam3/tokenizer.hpp"
 #include "sam3/processor_mixins.hpp"
+#include "sam3/sam3_model.hpp"
 
 namespace Sam3
 {
@@ -71,6 +72,12 @@ public:
 
     /// Pre-process a raw BGR image and a text prompt string.
     Sam3ModelInputs process(const cv::Mat& image, const std::string& text) const;
+
+    /// Pre-process image only (pixel_values + orig dimensions; text fields unset).
+    Sam3ModelInputs processImageOnly(const cv::Mat& image) const;
+
+    /// Pre-process a list of text prompts, one Sam3TextInputs per entry.
+    std::vector<Sam3TextInputs> processTexts(const std::vector<std::string>& texts) const;
 
     /// Post-process raw model outputs into per-instance binary masks.
     /// Mirrors HuggingFace Sam3Processor.post_process_instance_segmentation().
