@@ -4,7 +4,7 @@ project(sam3 VERSION 1.0.0)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-
+set(Json_INCLUDE_DIRS "/usr/include/jsoncpp")
 set(Torch_DIR  "/opt/libtorch/share/cmake/Torch")
 set(TORCH_ROOT "/opt/libtorch")
 
@@ -12,23 +12,16 @@ find_package(Torch   REQUIRED PATHS "${TORCH_ROOT}")
 find_package(OpenCV  REQUIRED)
 find_package(yaml-cpp REQUIRED)
 find_package(glog    REQUIRED)
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(JSONCPP REQUIRED jsoncpp)
 
-find_package(jsoncpp QUIET)
-if(NOT jsoncpp_FOUND)
-    find_path(JSONCPP_INCLUDE_DIR json/json.h PATH_SUFFIXES jsoncpp)
-    find_library(JSONCPP_LIBRARY NAMES jsoncpp)
-    if(NOT JSONCPP_INCLUDE_DIR OR NOT JSONCPP_LIBRARY)
-        message(FATAL_ERROR "jsoncpp not found. Install libjsoncpp-dev.")
-    endif()
-    add_library(jsoncpp_lib UNKNOWN IMPORTED)
-    set_target_properties(jsoncpp_lib PROPERTIES
-        IMPORTED_LOCATION "${JSONCPP_LIBRARY}"
-        INTERFACE_INCLUDE_DIRECTORIES "${JSONCPP_INCLUDE_DIR}"
-    )
-    set(JSONCPP_TARGET jsoncpp_lib)
-else()
-    set(JSONCPP_TARGET jsoncpp_lib)
-endif()
+include_directories(
+    include
+    ${TORCH_INCLUDE_DIRS}
+    ${OpenCV_INCLUDE_DIRS}
+    ${JSONCPP_INCLUDE_DIRS}
+    ${yaml-cpp_INCLUDE_DIRS}
+)
 
 add_library(${PROJECT_NAME}
     src/tokenizer.cpp
@@ -37,15 +30,10 @@ add_library(${PROJECT_NAME}
     src/sam3_model.cpp
 )
 
-target_include_directories(${PROJECT_NAME} PUBLIC
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-    $<INSTALL_INTERFACE:include>
-)
-
 target_link_libraries(${PROJECT_NAME} PUBLIC
     ${TORCH_LIBRARIES}
     ${OpenCV_LIBRARIES}
-    ${JSONCPP_TARGET}
+    ${JSONCPP_LIBRARIES}
     glog::glog
     yaml-cpp
 )
