@@ -57,13 +57,47 @@ add_executable(sam3_road_test test/test_road.cpp)
 target_link_libraries(sam3_road_test PRIVATE ${PROJECT_NAME})
 
 include(GNUInstallDirs)
+include(CMakePackageConfigHelpers)
 
+# Install the library
 install(TARGETS ${PROJECT_NAME}
+    EXPORT Sam3Targets
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 )
 
+# Install header files
 install(DIRECTORY include/
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-    FILES_MATCHING PATTERN "*.hpp"
+    FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp"
+)
+
+# Install the export set
+install(EXPORT Sam3Targets
+    FILE Sam3Targets.cmake
+    NAMESPACE Sam3::
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/Sam3
+)
+
+# Create config file
+configure_package_config_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/cmake/Sam3Config.cmake.in
+    ${CMAKE_CURRENT_BINARY_DIR}/Sam3Config.cmake
+    INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/Sam3
+)
+
+# Create version file
+write_basic_package_version_file(
+    ${CMAKE_CURRENT_BINARY_DIR}/Sam3ConfigVersion.cmake
+    VERSION ${PROJECT_VERSION}
+    COMPATIBILITY SameMajorVersion
+)
+
+# Install config files
+install(FILES
+    ${CMAKE_CURRENT_BINARY_DIR}/Sam3Config.cmake
+    ${CMAKE_CURRENT_BINARY_DIR}/Sam3ConfigVersion.cmake
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/Sam3
 )
