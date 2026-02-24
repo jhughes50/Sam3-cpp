@@ -4,6 +4,7 @@ project(sam3 VERSION 1.0.0)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 set(Json_INCLUDE_DIRS "/usr/include/jsoncpp")
 set(Torch_DIR  "/opt/libtorch/share/cmake/Torch")
 set(TORCH_ROOT "/opt/libtorch")
@@ -38,6 +39,10 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
     yaml-cpp
 )
 
+target_include_directories(${PROJECT_NAME} PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:include>
+)
 #add_executable(sam3_inference_test test/test_inference.cpp)
 #target_link_libraries(sam3_inference_test PRIVATE ${PROJECT_NAME})
 #
