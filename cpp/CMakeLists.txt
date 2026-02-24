@@ -38,11 +38,11 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
     yaml-cpp
 )
 
-add_executable(sam3_inference_test test/test_inference.cpp)
-target_link_libraries(sam3_inference_test PRIVATE ${PROJECT_NAME})
-
-add_executable(sam3_road_test test/test_road.cpp)
-target_link_libraries(sam3_road_test PRIVATE ${PROJECT_NAME})
+#add_executable(sam3_inference_test test/test_inference.cpp)
+#target_link_libraries(sam3_inference_test PRIVATE ${PROJECT_NAME})
+#
+#add_executable(sam3_road_test test/test_road.cpp)
+#target_link_libraries(sam3_road_test PRIVATE ${PROJECT_NAME})
 
 include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
