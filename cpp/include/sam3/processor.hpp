@@ -28,7 +28,8 @@ struct Sam3Parameters
     float score_threshold;   // Minimum final score to keep a mask
     float mask_threshold;    // Sigmoid threshold for binary mask
 
-    explicit Sam3Parameters(const std::string& yaml_path);
+    Sam3Parameters() = default;
+    Sam3Parameters(const std::string& yaml_path);
 };
 
 
