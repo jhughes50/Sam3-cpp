@@ -160,30 +160,22 @@ std::vector<Sam3TextInputs> Sam3Processor::processTexts(const std::vector<std::s
     return result;
 }
 
-// ---------------------------------------------------------------------------
-// Post-processing
-// ---------------------------------------------------------------------------
-
-std::vector<cv::Mat> Sam3Processor::postProcess(const at::Tensor& pred_masks, const at::Tensor& pred_logits, const at::Tensor& presence_logits, int orig_h, int orig_w) const
+std::pair<cv::Mat, cv::Mat> Sam3Processor::postProcess(
+    const at::Tensor& pred_masks,
+    const at::Tensor& pred_logits,
+    const at::Tensor& presence_logits,
+    int orig_h, int orig_w) const
 {
-    // Mirrors HuggingFace post_process_instance_segmentation():
-    //   scores  = sigmoid(pred_logits) * sigmoid(presence_logits)  -> (Q,)
-    //   keep    = scores > score_threshold
-    //   for each kept mask: bilinear upsample to (orig_h, orig_w), binarize
-
     at::Tensor scores = (torch::sigmoid(pred_logits) *
-                         torch::sigmoid(presence_logits)).squeeze(0);  // (Q,)
-    at::Tensor masks  = torch::sigmoid(pred_masks).squeeze(0);          // (Q, H_m, W_m)
+                         torch::sigmoid(presence_logits)).squeeze(0);
+    at::Tensor masks  = torch::sigmoid(pred_masks).squeeze(0);
 
-    at::Tensor keep   = (scores > params_.score_threshold).nonzero().squeeze(1); // (K,)
-
-    // Fallback: keep best query if nothing passes threshold
+    at::Tensor keep = (scores > params_.score_threshold).nonzero().squeeze(1);
     if (keep.numel() == 0)
         keep = torch::tensor({scores.argmax().item<int64_t>()});
 
-    at::Tensor sel_masks = masks.index_select(0, keep);  // (K, H_m, W_m)
+    at::Tensor sel_masks = masks.index_select(0, keep);
 
-    // Bilinear upsample: (1, K, H_m, W_m) -> (1, K, orig_h, orig_w)
     at::Tensor sel_4d = sel_masks.unsqueeze(0);
     at::Tensor up = torch::nn::functional::interpolate(
         sel_4d,
@@ -193,18 +185,15 @@ std::vector<cv::Mat> Sam3Processor::postProcess(const at::Tensor& pred_masks, co
             .align_corners(false)
     ).squeeze(0);  // (K, orig_h, orig_w)
 
-    // Binarize and convert each instance to CV_8UC1
-    std::vector<cv::Mat> result;
-    result.reserve(keep.numel());
-    for (int64_t i = 0; i < keep.numel(); ++i)
-    {
-        at::Tensor bin = (up[i] > params_.mask_threshold).to(torch::kFloat32);
-        cv::Mat m = tensorToCv(bin);          // CV_32FC1
-        m.convertTo(m, CV_8UC1, 255.0);
-        result.push_back(m.clone());
-    }
+    // Merge all kept queries: max across K
+    at::Tensor merged_scores = std::get<0>(up.max(0));  // (orig_h, orig_w)
+    at::Tensor bin = (merged_scores > params_.mask_threshold).to(torch::kFloat32);
 
-    return result;
+    cv::Mat mask_mat = tensorToCv(bin);
+    mask_mat.convertTo(mask_mat, CV_8UC1, 255.0);
+
+    cv::Mat score_mat = tensorToCv(merged_scores);  // CV_32FC1, values in [0, 1]
+
+    return {mask_mat.clone(), score_mat.clone()};
 }
-
 }  // namespace Sam3

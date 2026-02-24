@@ -20,6 +20,7 @@ namespace Sam3
 class CLIPTokenizer
 {
 public:
+    CLIPTokenizer() = default;
     /// @param merges_path  Path to merges.txt (BPE merge rules)
     /// @param vocab_path   Path to vocab.json  (token -> id mapping)
     CLIPTokenizer(const std::string& merges_path, const std::string& vocab_path);

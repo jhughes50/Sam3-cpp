@@ -16,13 +16,9 @@
 namespace Sam3
 {
 
-// ---------------------------------------------------------------------------
-// Base
-// ---------------------------------------------------------------------------
-
 class Sam3ModelBase
 {
-public:
+public: 
     explicit Sam3ModelBase(const std::string& model_path);
     
     torch::ScalarType getDType() const;
