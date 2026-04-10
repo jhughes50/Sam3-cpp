@@ -1,13 +1,25 @@
 cmake_minimum_required(VERSION 3.17)
 project(sam3 VERSION 1.0.0)
 
+option(BUILD_ARM "build for arm platform" OFF)
+
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 set(Json_INCLUDE_DIRS "/usr/include/jsoncpp")
-set(Torch_DIR  "/opt/libtorch/share/cmake/Torch")
-set(TORCH_ROOT "/opt/libtorch")
+if (BUILD_ARM)
+    execute_process(
+        COMMAND python3 -c "import torch; print(torch.utils.cmake_prefix_path)"
+        OUTPUT_VARIABLE TORCH_CMAKE_PATH
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+    set(Torch_DIR  "${TORCH_CMAKE_PATH}/Torch")
+    set(TORCH_ROOT "${TORCH_CMAKE_PATH}/..")
+else()
+    set(Torch_DIR  "/opt/libtorch/share/cmake/Torch")
+    set(TORCH_ROOT "/opt/libtorch")
+endif()
 
 find_package(Torch   REQUIRED PATHS "${TORCH_ROOT}")
 find_package(OpenCV  REQUIRED)
